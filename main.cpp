@@ -3,7 +3,9 @@
 #include "MSTFactory.hpp"
 
 int main() {
+    cout << "starting" << endl;
     Graph graph(5);
+    string commend = "start";
 
     // Add edges to the graph with weights
     graph.addEdge(0, 1, 2.0);
@@ -21,6 +23,41 @@ int main() {
 
     // Print the MST
     mst.printTree();
+    while(commend != "end"){
+        cout << "enter the commend" << endl;
+        cin >> commend;
+        if(commend == "kosaraju"){
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::KRUSKAL);
+            Tree mst = mstStrategy->computeMST(graph);
+
+            // Print the MST
+            mst.printTree();
+        }
+        
+        if(commend == "Prim"){
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::PRIM);
+            Tree mst = mstStrategy->computeMST(graph);
+
+            // Print the MST
+            mst.printTree();
+        }
+
+        if(commend == "Boruvka"){
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Boruvka);
+            Tree mst = mstStrategy->computeMST(graph);
+
+            // Print the MST
+            mst.printTree();
+        }
+
+        if(commend == "Tarjan"){
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Tarjan);
+            Tree mst = mstStrategy->computeMST(graph);
+
+            // Print the MST
+            mst.printTree();
+        }
+    }
 
     // Calculate additional data
     double totalWeight = mst.calculateTotalWeight();

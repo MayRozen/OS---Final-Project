@@ -12,13 +12,13 @@ PROFFLAGS = -pg
 VALFLAGS = --leak-check=full --log-file="valgrind_log.txt"
 
 # Source files
-SRC = main.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp
+SRC = main.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp Server.cpp
 
 # Object files
 OBJ = $(SRC:.cpp=.o)
 
 # Executable
-EXEC = main
+EXEC = main Server
 
 # Default target
 all: $(EXEC)

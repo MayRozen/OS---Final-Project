@@ -8,7 +8,9 @@ class MSTFactory {
 public:
     enum class Algorithm {
         KRUSKAL,
-        PRIM
+        PRIM,
+        Boruvka,
+        Tarjan
     };
 
     static std::unique_ptr<MSTStrategy> createMSTStrategy(Algorithm algo);
