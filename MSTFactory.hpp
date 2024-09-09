@@ -10,7 +10,8 @@ public:
         KRUSKAL,
         PRIM,
         Boruvka,
-        Tarjan
+        Tarjan,
+        IntegerMST
     };
 
     static std::unique_ptr<MSTStrategy> createMSTStrategy(Algorithm algo);
