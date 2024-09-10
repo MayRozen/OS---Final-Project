@@ -58,8 +58,8 @@ int main() {
             mst.printTree();
         }
 
-        if(commend == "IntegerMST"){
-            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::IntegerMST);
+        if(commend == "Integer"){
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Integer);
             Tree mst = mstStrategy->computeMST(graph);
 
             // Print the MST

@@ -11,7 +11,7 @@ public:
         PRIM,
         Boruvka,
         Tarjan,
-        IntegerMST
+        Integer
     };
 
     static std::unique_ptr<MSTStrategy> createMSTStrategy(Algorithm algo);

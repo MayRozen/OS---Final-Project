@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <functional>
 #include <vector>
+#include <unordered_map>
 #include <boost/asio.hpp>
 
 #define PORT "9034"  // Port to listen on
@@ -34,6 +35,56 @@ void *get_in_addr(struct sockaddr *sa) {
 void sigchld_handler([[maybe_unused]] int s) {
     while(waitpid(-1, nullptr, WNOHANG) > 0);
 }
+
+// Graph class to manage nodes and edges
+class Graph {
+    unordered_map<int, vector<pair<int, double>>> adjList; // Node -> [(neighbor, weight)]
+    
+public:
+    // Add edge to the graph
+    void addEdge(int u, int v, double weight) {
+        adjList[u].emplace_back(v, weight);
+        adjList[v].emplace_back(u, weight); // Assuming undirected graph
+    }
+
+    // Display the graph (for debugging)
+    void displayGraph() {
+        for (const auto& node : adjList) {
+            cout << node.first << " -> ";
+            for (const auto& neighbor : node.second) {
+                cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
+            }
+            cout << endl;
+        }
+    }
+
+    // Prim's algorithm to compute the MST
+    double computeMST() {
+        if (adjList.empty()) return 0;
+
+        unordered_map<int, bool> inMST;
+        priority_queue<pair<double, int>, vector<pair<double, int>>, greater<>> pq; // Min-heap for edge weights
+        int startNode = adjList.begin()->first;
+        pq.emplace(0, startNode); // Start from an arbitrary node
+
+        double totalCost = 0;
+        while (!pq.empty()) {
+            auto [cost, node] = pq.top(); pq.pop();
+            if (inMST[node]) continue; // Skip if already in MST
+
+            inMST[node] = true;
+            totalCost += cost;
+
+            for (auto& [neighbor, weight] : adjList[node]) {
+                if (!inMST[neighbor]) {
+                    pq.emplace(weight, neighbor);
+                }
+            }
+        }
+
+        return totalCost;
+    }
+};
 
 // ActiveObject class to process tasks asynchronously
 class ActiveObject {
@@ -128,20 +179,50 @@ private:
 };
 
 // Function to handle the MST problem-solving and respond to the client
-void handleRequest(int client_fd) {
-    // Simulate processing stages
-    std::cout << "Handling request..." << std::endl;
+void handleRequest(int client_fd, Graph &graph) {
+    char buffer[256];
+    int n = read(client_fd, buffer, sizeof(buffer) - 1);
 
-    // Here we would parse the request, compute MST, and send the response
-    // For now, just sending a simple message back to the client
-    const char *response = "MST Computation Done\n";
-    send(client_fd, response, strlen(response), 0);
+    // Read the client's request
+    if ((n = read(client_fd, buffer, 255)) < 0) {
+        perror("Error: reading from client socket");
+        close(client_fd);
+        return;
+    }
+    if (n < 0) {
+        perror("Error reading from socket");
+        close(client_fd);
+        return;
+    }
+
+    buffer[n] = '\0'; // Null-terminate the buffer
+
+    std::string request(buffer);
+    std::istringstream iss(request);
+    std::string command;
+    iss >> command;
+
+    if (command == "ADD_EDGE") {
+        int u, v;
+        double weight;
+        if (iss >> u >> v >> weight) {
+            graph.addEdge(u, v, weight);
+            const char *response = "Edge added successfully\n";
+            send(client_fd, response, strlen(response), 0);
+        } else {
+            const char *response = "Invalid ADD_EDGE command format\n";
+            send(client_fd, response, strlen(response), 0);
+        }
+    } else {
+        const char *response = "Unknown command\n";
+        send(client_fd, response, strlen(response), 0);
+    }
 
     close(client_fd);
     std::cout << "Request handled." << std::endl;
 }
 
-int main1() {
+int main() {
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr;
@@ -205,6 +286,7 @@ int main1() {
     cout << "server: waiting for connections..." << endl;
 
     LeaderFollower leaderFollower(4); // Create a thread pool with 4 threads
+    Graph graph; // Create a graph instance
 
     while (true) {
         sin_size = sizeof their_addr;
@@ -217,8 +299,8 @@ int main1() {
         inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
         cout << "server: got connection from " << s << endl;
 
-        leaderFollower.submit([new_fd]() {
-            handleRequest(new_fd);
+        leaderFollower.submit([new_fd, &graph]() {
+            handleRequest(new_fd, graph);
         });
     }
 

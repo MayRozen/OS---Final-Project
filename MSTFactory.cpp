@@ -4,6 +4,7 @@
 #include "PrimMST.hpp"
 #include "BoruvkaMST.hpp"
 #include "TarjanMST.hpp"
+#include "IntegerMST.hpp"
 
 std::unique_ptr<MSTStrategy> MSTFactory::createMSTStrategy(MSTFactory::Algorithm algo) {
     switch (algo) {
@@ -15,6 +16,8 @@ std::unique_ptr<MSTStrategy> MSTFactory::createMSTStrategy(MSTFactory::Algorithm
             return std::make_unique<BoruvkaMST>();
         case Algorithm::Tarjan:
             return std::make_unique<TarjanMST>();
+        case Algorithm::Integer:
+            return std::make_unique<IntegerMST>();
         default:
             return nullptr;
     }
