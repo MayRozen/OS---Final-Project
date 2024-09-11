@@ -136,6 +136,7 @@ private:
 // Leader-Follower pattern class to manage thread pool
 class LeaderFollower {
     std::vector<std::thread> threads;
+    std::queue<std::function<void()>> tasks; // Add this member
     std::mutex mtx;
     std::condition_variable cv;
     bool stop;
@@ -167,13 +168,19 @@ private:
     void threadLoop(int id) {
         while (true) {
             std::unique_lock<std::mutex> lock(mtx);
-            cv.wait(lock, [this] { return stop; });
+            cv.wait(lock, [this] { return stop || !tasks.empty(); });
 
-            if (stop) return;
+            if (stop && tasks.empty()) return;
 
             std::cout << "Thread " << id << " is the leader" << std::endl;
 
-            io_context.run();
+            while (!tasks.empty()) {
+                auto task = tasks.front();
+                tasks.pop();
+                lock.unlock();
+                task();
+                lock.lock();
+            }
         }
     }
 };
@@ -183,14 +190,13 @@ void handleRequest(int client_fd, Graph &graph) {
     char buffer[256];
     int n = read(client_fd, buffer, sizeof(buffer) - 1);
 
-    // Read the client's request
-    if ((n = read(client_fd, buffer, 255)) < 0) {
-        perror("Error: reading from client socket");
+    if (n < 0) {
+        perror("Error reading from socket");
         close(client_fd);
         return;
     }
-    if (n < 0) {
-        perror("Error reading from socket");
+    if (n == 0) {
+        // Connection closed by client
         close(client_fd);
         return;
     }
@@ -209,10 +215,19 @@ void handleRequest(int client_fd, Graph &graph) {
             graph.addEdge(u, v, weight);
             const char *response = "Edge added successfully\n";
             send(client_fd, response, strlen(response), 0);
+            // Display the current state of the graph
+            graph.displayGraph();
         } else {
             const char *response = "Invalid ADD_EDGE command format\n";
             send(client_fd, response, strlen(response), 0);
-        }
+        } 
+    } else if (command == "COMPUTE_MST") {
+        double mstCost = graph.computeMST();
+        std::ostringstream oss;
+        oss << "MST total cost: " << mstCost << "\n";
+        send(client_fd, oss.str().c_str(), oss.str().length(), 0);
+        // Display the current state of the graph
+        graph.displayGraph();
     } else {
         const char *response = "Unknown command\n";
         send(client_fd, response, strlen(response), 0);

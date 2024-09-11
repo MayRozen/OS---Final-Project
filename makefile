@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Werror -Wsign-conversion -g -no-pie
+CXXFLAGS = -std=c++17 -Wall -Werror -Wsign-conversion -g
 
 # Coverage flags
 COVFLAGS = -fprofile-arcs -ftest-coverage
@@ -15,10 +15,12 @@ VALFLAGS = --leak-check=full --log-file="valgrind_log.txt"
 LDFLAGS = -lboost_system
 
 # Source files
-SRC = main.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp Server.cpp
+SRC_MAIN = main.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
+SRC_SERVER = Server.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
 
 # Object files
-OBJ = $(SRC:.cpp=.o)
+OBJ_MAIN = $(SRC_MAIN:.cpp=.o)
+OBJ_SERVER = $(SRC_SERVER:.cpp=.o)
 
 # Executables
 EXEC_MAIN = main
@@ -28,10 +30,10 @@ EXEC_SERVER = server
 all: $(EXEC_MAIN) $(EXEC_SERVER)
 
 # Build the executables
-$(EXEC_MAIN): main.o Graph.o Tree.o MSTFactory.o KruskalMST.o PrimMST.o BoruvkaMST.o TarjanMST.o IntegerMST.o
+$(EXEC_MAIN): $(OBJ_MAIN)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-$(EXEC_SERVER): Server.o Graph.o Tree.o MSTFactory.o KruskalMST.o PrimMST.o BoruvkaMST.o TarjanMST.o IntegerMST.o
+$(EXEC_SERVER): $(OBJ_SERVER)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 # Compile source files
@@ -50,7 +52,7 @@ run_server: $(EXEC_SERVER)
 coverage: CXXFLAGS += $(COVFLAGS)
 coverage: clean $(EXEC_MAIN) $(EXEC_SERVER)
 	./$(EXEC_MAIN) -v 5 -e 7 -s 42
-	gcov $(SRC)
+	gcov $(SRC_MAIN)
 	lcov --capture --directory . --output-file coverage.info
 	genhtml coverage.info --output-directory out
 
@@ -77,6 +79,6 @@ valgrind_callgrind: $(EXEC_MAIN)
 clean:
 	rm -f *.o $(EXEC_MAIN) $(EXEC_SERVER) gmon.out *.gcda *.gcno *.gcov coverage.info 
 	rm -rf out
-	rm -f valgrind_log.txt callgrind.out.*
+	rm -f valgrind_log.txt custom_callgrind.out
 
 .PHONY: all run_main run_server coverage profile valgrind valgrind_memcheck valgrind_callgrind clean
