@@ -2,7 +2,7 @@
 #include "Tree.hpp"
 #include "MSTFactory.hpp"
 
-int main1() {
+int main() {
     cout << "starting" << endl;
     Graph graph(5);
     string commend = "start";

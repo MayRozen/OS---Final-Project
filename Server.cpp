@@ -33,7 +33,9 @@ void *get_in_addr(struct sockaddr *sa) {
 
 // Signal handler to properly close the socket on SIGINT or SIGTERM
 void signalHandler(int signum) {
-    close(sockfd);
+    if (sockfd != -1) {
+        close(sockfd);
+    }
     std::cout << "\nServer shutting down gracefully...\n";
     exit(signum);
 }
@@ -107,7 +109,7 @@ int main() {
     signal(SIGTERM, signalHandler);
 
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;  // Change to AF_INET if you only need IPv4
+    hints.ai_family = AF_INET;  // Use AF_INET for IPv4
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -124,12 +126,14 @@ int main() {
 
         if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
             perror("setsockopt");
-            exit(1);
+            close(sockfd);
+            freeaddrinfo(servinfo);
+            return 1;
         }
 
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sockfd);
             perror("server: bind");
+            close(sockfd);
             continue;
         }
 
@@ -145,7 +149,8 @@ int main() {
 
     if (listen(sockfd, BACKLOG) == -1) {
         perror("listen");
-        exit(1);
+        close(sockfd);
+        return 1;
     }
 
     cout << "server: waiting for connections..." << endl;
@@ -168,5 +173,6 @@ int main() {
         });
     }
 
+    close(sockfd);  // Ensure socket is closed before exit
     return 0;
 }
