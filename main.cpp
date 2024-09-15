@@ -26,7 +26,7 @@ int main() {
     while(commend != "end"){
         cout << "enter the commend" << endl;
         cin >> commend;
-        if(commend == "Kruskal"){
+        if(commend == "kosaraju"){
             auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::KRUSKAL);
             Tree mst = mstStrategy->computeMST(graph);
 
@@ -52,14 +52,6 @@ int main() {
 
         if(commend == "Tarjan"){
             auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Tarjan);
-            Tree mst = mstStrategy->computeMST(graph);
-
-            // Print the MST
-            mst.printTree();
-        }
-
-        if(commend == "Integer"){
-            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Integer);
             Tree mst = mstStrategy->computeMST(graph);
 
             // Print the MST
