@@ -1,4 +1,7 @@
 #include "Graph.hpp"
+#include <algorithm>
+
+using namespace std;
 
 Graph::Graph(int myVertices) : vertices(myVertices) {
     adjList.resize((size_t)myVertices);
@@ -8,6 +11,27 @@ void Graph::addEdge(size_t u, size_t v, double weight) {
     adjList[u].emplace_back(v, weight);
     adjList[v].emplace_back(u, weight); // Since the graph is undirected
 }
+
+void Graph::removeEdge(size_t u, size_t v) {
+    // Remove edge from u to v
+    auto it = std::remove_if(adjList[u].begin(), adjList[u].end(), 
+                             [v](const std::pair<size_t, double>& edge) {
+                                 return edge.first == v;
+                             });
+    if (it != adjList[u].end()) {
+        adjList[u].erase(it, adjList[u].end());
+    }
+
+    // Remove edge from v to u (because the graph is undirected)
+    it = std::remove_if(adjList[v].begin(), adjList[v].end(), 
+                        [u](const std::pair<size_t, double>& edge) {
+                            return edge.first == u;
+                        });
+    if (it != adjList[v].end()) {
+        adjList[v].erase(it, adjList[v].end());
+    }
+}
+
 
 bool Graph::isConnected() {
     vector<bool> visited((size_t)vertices, false);
@@ -117,6 +141,16 @@ void Graph::printGraph() {
             cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
         }
         cout << endl;
+    }
+}
+
+void Graph::printGraph(ostream& os) {
+    for (size_t i = 0; i < (size_t)vertices; i++) {
+        os << i << " -> ";
+        for (auto& neighbor : adjList[i]) {
+            os << "(" << neighbor.first << ", " << neighbor.second << ") ";
+        }
+        os << endl;
     }
 }
 

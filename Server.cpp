@@ -79,10 +79,11 @@ private:
 // Function to handle client requests and execute the binary
 void handleRequest(int client_fd) {
     std::cout << "Handling request..." << std::endl;
-    
+
     char buffer[1024];
     std::string command;
-
+    Graph graph(5); // Default graph with 5 vertices
+    
     while (true) {
         memset(buffer, 0, sizeof(buffer));
         int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);  // Receive command from client
@@ -97,51 +98,86 @@ void handleRequest(int client_fd) {
         if (command == "end") {
             break;
         }
+        
+        std::istringstream iss(command);
+        std::string action;
+        iss >> action;
 
-        // Initialize Graph and MST logic
-        Graph graph(5);
-        graph.addEdge(0, 1, 2.0);
-        graph.addEdge(0, 2, 4.0);
-        graph.addEdge(1, 2, 1.5);
-        graph.addEdge(1, 3, 3.0);
-        graph.addEdge(2, 4, 5.0);
-
-        Tree mst;
-        if (command == "kosaraju" || command == "Kruskal") {
-            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::KRUSKAL);
-            mst = mstStrategy->computeMST(graph);
-        } 
-        else if (command == "Prim") {
-            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::PRIM);
-            mst = mstStrategy->computeMST(graph);
-        } 
-        else if (command == "Boruvka") {
-            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Boruvka);
-            mst = mstStrategy->computeMST(graph);
-        } 
-        else if (command == "Tarjan") {
-            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Tarjan);
-            mst = mstStrategy->computeMST(graph);
+        // Create a new graph
+        if (action == "new_graph") {
+            int num_vertices;
+            iss >> num_vertices;
+            graph = Graph(num_vertices); // Create a new graph with the specified number of vertices
+            std::string response = "New graph created with " + std::to_string(num_vertices) + " vertices.\n";
+            send(client_fd, response.c_str(), response.length(), 0);
         }
-        else if (command == "end"){
-            break;
-        } 
+        // Add edge: format "add_edge vertex1 vertex2 weight"
+        else if (action == "add_edge") {
+            size_t v1, v2;
+            double weight;
+            iss >> v1 >> v2 >> weight;
+            graph.addEdge(v1, v2, weight);
+            std::string response = "Edge added between " + to_string(v1) + " and " + to_string(v2) + " with weight " + std::to_string(weight) + ".\n";
+            send(client_fd, response.c_str(), response.length(), 0);
+        }
+        // Remove edge: format "remove_edge vertex1 vertex2"
+        else if (action == "remove_edge") {
+            size_t v1, v2;
+            iss >> v1 >> v2;
+            graph.removeEdge(v1, v2);
+            std::string response = "Edge removed between " + std::to_string(v1) + " and " + std::to_string(v2) + ".\n";
+            send(client_fd, response.c_str(), response.length(), 0);
+        }
+        // Build MST using specified algorithm and return tree
+        else if (action == "MST") {
+            std::string algorithm;
+            iss >> algorithm;
+            
+            Tree mst;
+            if (algorithm == "Kruskal") {
+                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::KRUSKAL);
+                mst = mstStrategy->computeMST(graph);
+            } 
+            else if (algorithm == "Prim") {
+                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::PRIM);
+                mst = mstStrategy->computeMST(graph);
+            } 
+            else if (algorithm == "Boruvka") {
+                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Boruvka);
+                mst = mstStrategy->computeMST(graph);
+            } 
+            else if (algorithm == "Tarjan") {
+                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Tarjan);
+                mst = mstStrategy->computeMST(graph);
+            }
+            else {
+                const char *error_msg = "Unknown MST algorithm\n";
+                send(client_fd, error_msg, strlen(error_msg), 0);
+                continue;
+            }
+
+            // Send back the MST result to the client
+            std::ostringstream oss;
+            oss << "MST Computed using " << algorithm << ":" << std::endl;
+            mst.printTree(oss);  // Assuming printTree can accept an ostream
+            std::string result = oss.str();
+            send(client_fd, result.c_str(), result.length(), 0);
+        }
+        // Print the current graph
+        else if (action == "print_graph") {
+            std::ostringstream oss;
+            graph.printGraph(oss);  // Assuming printGraph can accept an ostream
+            std::string result = oss.str();
+            send(client_fd, result.c_str(), result.length(), 0);
+        }
         else {
             const char *error_msg = "Unknown command\n";
             send(client_fd, error_msg, strlen(error_msg), 0);
-            continue;
         }
-
-        // Send back the result (e.g., MST details) to the client
-        ostringstream oss;
-        oss << "MST Computed: " << endl;
-        mst.printTree(oss);  // Assuming printTree can accept an ostream
-        string result = oss.str();
-        send(client_fd, result.c_str(), result.length(), 0);
     }
 
     close(client_fd);
-    cout << "Request handled." << endl;
+    std::cout << "Request handled." << std::endl;
 }
 
 
@@ -225,3 +261,30 @@ int main() {
     close(sockfd);  // Ensure socket is closed before exit
     return 0;
 }
+
+//**************************** how to run the code **********************************//
+
+
+// $ nc 127.0.0.1 9034
+// new_graph 5
+// New graph created with 5 vertices.
+
+// add_edge 0 1 2.0
+// Edge added between 0 and 1 with weight 2.0.
+
+// add_edge 0 2 3.0
+// Edge added between 0 and 2 with weight 3.0.
+
+// print_graph
+// Current graph:
+// 0 -> 1 (2.0), 2 (3.0)
+// 1 -> 0 (2.0)
+// 2 -> 0 (3.0)
+
+// MST Kruskal
+// MST Computed using Kruskal:
+// Edge 0-1 with weight 2.0
+// Edge 0-2 with weight 3.0
+
+// end
+
