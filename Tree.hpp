@@ -9,8 +9,10 @@ using namespace std;
 class Tree {
 public:
     Tree(int myVertices);
+    Tree();
     void addEdge(size_t u, size_t v);
     void printTree() const;
+    void printTree(std::ostream& os) const;
     void addEdge(size_t u, size_t v, double weight);
     double calculateTotalWeight() const;
     double calculateLongestDistance() const;

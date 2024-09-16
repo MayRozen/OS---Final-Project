@@ -5,6 +5,9 @@
 Tree::Tree(int myVertices) : vertices(myVertices) {
     treeAdjList.resize(static_cast<size_t>(myVertices));
 }
+Tree::Tree()  {
+    treeAdjList.resize(static_cast<size_t>(0));
+}
 
 void Tree::addEdge(size_t u, size_t v) {
     treeAdjList[u].emplace_back(v, 0.0); // Default weight 0.0
@@ -20,6 +23,18 @@ void Tree::printTree() const {
         cout << endl;
     }
 }
+
+// Assuming this is part of your Tree class
+void Tree::printTree(std::ostream& os) const {
+    for (size_t i = 0; i < treeAdjList.size(); ++i) {
+        os << i << " -> ";
+        for (const auto& neighbor : treeAdjList[i]) {
+            os << "(" << neighbor.first << ", " << neighbor.second << ") ";
+        }
+        os << endl;
+    }
+}
+
 
 void Tree::addEdge(size_t u, size_t v, double weight) {
     treeAdjList[u].emplace_back(v, weight);

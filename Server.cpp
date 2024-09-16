@@ -15,6 +15,9 @@
 #include <functional>
 #include <vector>
 #include <boost/asio.hpp>
+#include "Graph.hpp"
+#include "Tree.hpp"
+#include "MSTFactory.hpp"
 
 #define PORT "9034"  // Port to listen on
 #define BACKLOG 10   // Number of pending connections queue will hold
@@ -76,25 +79,71 @@ private:
 // Function to handle client requests and execute the binary
 void handleRequest(int client_fd) {
     std::cout << "Handling request..." << std::endl;
+    
+    char buffer[1024];
+    std::string command;
 
-    // Execute the already compiled binary
-    FILE *fp = popen("/home/hadarfro/Desktop/OS---Final-Project/main", "r");
-    if (fp == nullptr) {
-        const char *error_msg = "Failed to run the executable.\n";
-        perror("popen");
-        send(client_fd, error_msg, strlen(error_msg), 0);
-    } 
-    else {
-        char buffer[1024];
-        while (fgets(buffer, sizeof(buffer), fp) != nullptr) {
-            send(client_fd, buffer, strlen(buffer), 0);  // Send the output to the client
+    while (true) {
+        memset(buffer, 0, sizeof(buffer));
+        int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);  // Receive command from client
+        if (bytes_received <= 0) {
+            break;  // Exit loop if the connection is closed or there's an error
         }
-        pclose(fp);
+
+        command = std::string(buffer);
+        command = command.substr(0, command.find("\n")); // Remove trailing newline character
+        std::cout << "Received command: " << command << std::endl;
+
+        if (command == "end") {
+            break;
+        }
+
+        // Initialize Graph and MST logic
+        Graph graph(5);
+        graph.addEdge(0, 1, 2.0);
+        graph.addEdge(0, 2, 4.0);
+        graph.addEdge(1, 2, 1.5);
+        graph.addEdge(1, 3, 3.0);
+        graph.addEdge(2, 4, 5.0);
+
+        Tree mst;
+        if (command == "kosaraju" || command == "Kruskal") {
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::KRUSKAL);
+            mst = mstStrategy->computeMST(graph);
+        } 
+        else if (command == "Prim") {
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::PRIM);
+            mst = mstStrategy->computeMST(graph);
+        } 
+        else if (command == "Boruvka") {
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Boruvka);
+            mst = mstStrategy->computeMST(graph);
+        } 
+        else if (command == "Tarjan") {
+            auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Tarjan);
+            mst = mstStrategy->computeMST(graph);
+        }
+        else if (command == "end"){
+            break;
+        } 
+        else {
+            const char *error_msg = "Unknown command\n";
+            send(client_fd, error_msg, strlen(error_msg), 0);
+            continue;
+        }
+
+        // Send back the result (e.g., MST details) to the client
+        ostringstream oss;
+        oss << "MST Computed: " << endl;
+        mst.printTree(oss);  // Assuming printTree can accept an ostream
+        string result = oss.str();
+        send(client_fd, result.c_str(), result.length(), 0);
     }
 
     close(client_fd);
-    std::cout << "Request handled." << std::endl;
+    cout << "Request handled." << endl;
 }
+
 
 int main() {
     struct addrinfo hints, *servinfo, *p;
