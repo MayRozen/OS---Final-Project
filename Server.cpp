@@ -150,6 +150,10 @@ void handleRequest(int client_fd) {
                 auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Tarjan);
                 mst = mstStrategy->computeMST(graph);
             }
+            else if (algorithm == "Integer") {
+                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Integer);
+                mst = mstStrategy->computeMST(graph);
+            }
             else {
                 const char *error_msg = "Unknown MST algorithm\n";
                 send(client_fd, error_msg, strlen(error_msg), 0);
@@ -285,6 +289,19 @@ int main() {
 // MST Computed using Kruskal:
 // Edge 0-1 with weight 2.0
 // Edge 0-2 with weight 3.0
+
+// remove_edge 1 2
+// Edge removed between 1 and 2.
+
+// add_edge 2 3 6.0
+// Edge added between 2 and 3 with weight 6.000000.
+
+// print_graph
+// 0 -> (1, 2) (2, 3) 
+// 1 -> (0, 2) 
+// 2 -> (0, 3) (3, 6) 
+// 3 -> (2, 6) 
+// 4 -> 
 
 // end
 
