@@ -1,0 +1,95 @@
+        -:    0:Source:/usr/include/boost/system/system_error.hpp
+        -:    0:Graph:Server.gcno
+        -:    0:Data:Server.gcda
+        -:    0:Runs:1
+        -:    1://  Boost system_error.hpp  --------------------------------------------------//
+        -:    2:
+        -:    3://  Copyright Beman Dawes 2006
+        -:    4:
+        -:    5://  Distributed under the Boost Software License, Version 1.0. (See accompanying
+        -:    6://  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+        -:    7:
+        -:    8:#ifndef BOOST_SYSTEM_SYSTEM_ERROR_HPP
+        -:    9:#define BOOST_SYSTEM_SYSTEM_ERROR_HPP
+        -:   10:
+        -:   11:#include <boost/system/error_code.hpp>
+        -:   12:#include <string>
+        -:   13:#include <stdexcept>
+        -:   14:#include <cassert>
+        -:   15:
+        -:   16:namespace boost
+        -:   17:{
+        -:   18:  namespace system
+        -:   19:  {
+        -:   20:    //  class system_error  ------------------------------------------------------------//
+        -:   21:
+        -:   22:    class BOOST_SYMBOL_VISIBLE system_error : public std::runtime_error
+        -:   23:    // BOOST_SYMBOL_VISIBLE is needed by GCC to ensure system_error thrown from a shared
+        -:   24:    // library can be caught. See svn.boost.org/trac/boost/ticket/3697
+        -:   25:    {
+        -:   26:    public:
+        -:   27:      explicit system_error( error_code ec )
+        -:   28:          : std::runtime_error(""), m_error_code(ec) {}
+        -:   29:
+        -:   30:      system_error( error_code ec, const std::string & what_arg )
+        -:   31:          : std::runtime_error(what_arg), m_error_code(ec) {}
+        -:   32:
+        -:   33:      system_error( error_code ec, const char* what_arg )
+        -:   34:          : std::runtime_error(what_arg), m_error_code(ec) {}
+        -:   35:
+        -:   36:      system_error( int ev, const error_category & ecat )
+        -:   37:          : std::runtime_error(""), m_error_code(ev,ecat) {}
+        -:   38:
+        -:   39:      system_error( int ev, const error_category & ecat,
+        -:   40:        const std::string & what_arg )
+        -:   41:          : std::runtime_error(what_arg), m_error_code(ev,ecat) {}
+        -:   42:
+        -:   43:      system_error( int ev, const error_category & ecat,
+        -:   44:        const char * what_arg )
+        -:   45:          : std::runtime_error(what_arg), m_error_code(ev,ecat) {}
+        -:   46:
+    #####:   47:      virtual ~system_error() BOOST_NOEXCEPT_OR_NOTHROW {}
+------------------
+_ZN5boost6system12system_errorD0Ev:
+    #####:   47:      virtual ~system_error() BOOST_NOEXCEPT_OR_NOTHROW {}
+------------------
+_ZN5boost6system12system_errorD2Ev:
+    #####:   47:      virtual ~system_error() BOOST_NOEXCEPT_OR_NOTHROW {}
+------------------
+        -:   48:
+        -:   49:      error_code code() const BOOST_NOEXCEPT { return m_error_code; }
+        -:   50:      const char * what() const BOOST_NOEXCEPT_OR_NOTHROW BOOST_OVERRIDE;
+        -:   51:
+        -:   52:    private:
+        -:   53:      error_code           m_error_code;
+        -:   54:      mutable std::string  m_what;
+        -:   55:    };
+        -:   56:
+        -:   57:    //  implementation  ------------------------------------------------------//
+        -:   58:
+    #####:   59:    inline const char * system_error::what() const BOOST_NOEXCEPT_OR_NOTHROW
+        -:   60:    // see http://www.boost.org/more/error_handling.html for lazy build rationale
+        -:   61:    {
+    #####:   62:      if ( m_what.empty() )
+        -:   63:      {
+        -:   64:#ifndef BOOST_NO_EXCEPTIONS
+        -:   65:        try
+        -:   66:#endif
+        -:   67:        {
+    #####:   68:          m_what = this->std::runtime_error::what();
+    #####:   69:          if ( !m_what.empty() ) m_what += ": ";
+    #####:   70:          m_what += m_error_code.message();
+        -:   71:        }
+        -:   72:#ifndef BOOST_NO_EXCEPTIONS
+    =====:   73:        catch (...) { return std::runtime_error::what(); }
+        -:   74:#endif
+        -:   75:      }
+    #####:   76:      return m_what.c_str();
+        -:   77:    }
+        -:   78:
+        -:   79:  } // namespace system
+        -:   80:} // namespace boost
+        -:   81:
+        -:   82:#endif // BOOST_SYSTEM_SYSTEM_ERROR_HPP
+        -:   83:
+        -:   84:

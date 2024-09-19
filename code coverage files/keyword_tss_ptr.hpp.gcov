@@ -1,0 +1,108 @@
+        -:    0:Source:/usr/include/boost/asio/detail/keyword_tss_ptr.hpp
+        -:    0:Graph:Server.gcno
+        -:    0:Data:Server.gcda
+        -:    0:Runs:1
+        -:    1://
+        -:    2:// detail/keyword_tss_ptr.hpp
+        -:    3:// ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        -:    4://
+        -:    5:// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+        -:    6://
+        -:    7:// Distributed under the Boost Software License, Version 1.0. (See accompanying
+        -:    8:// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+        -:    9://
+        -:   10:
+        -:   11:#ifndef BOOST_ASIO_DETAIL_KEYWORD_TSS_PTR_HPP
+        -:   12:#define BOOST_ASIO_DETAIL_KEYWORD_TSS_PTR_HPP
+        -:   13:
+        -:   14:#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+        -:   15:# pragma once
+        -:   16:#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+        -:   17:
+        -:   18:#include <boost/asio/detail/config.hpp>
+        -:   19:
+        -:   20:#if defined(BOOST_ASIO_HAS_THREAD_KEYWORD_EXTENSION)
+        -:   21:
+        -:   22:#include <boost/asio/detail/noncopyable.hpp>
+        -:   23:
+        -:   24:#include <boost/asio/detail/push_options.hpp>
+        -:   25:
+        -:   26:namespace boost {
+        -:   27:namespace asio {
+        -:   28:namespace detail {
+        -:   29:
+        -:   30:template <typename T>
+        -:   31:class keyword_tss_ptr
+        -:   32:  : private noncopyable
+        -:   33:{
+        -:   34:public:
+        -:   35:  // Constructor.
+        3:   36:  keyword_tss_ptr()
+        3:   37:  {
+        3:   38:  }
+------------------
+_ZN5boost4asio6detail15keyword_tss_ptrINS1_10call_stackINS1_23strand_executor_service11strand_implEhE7contextEEC2Ev:
+        1:   36:  keyword_tss_ptr()
+        1:   37:  {
+        1:   38:  }
+------------------
+_ZN5boost4asio6detail15keyword_tss_ptrINS1_10call_stackINS1_14strand_service11strand_implEhE7contextEEC2Ev:
+        1:   36:  keyword_tss_ptr()
+        1:   37:  {
+        1:   38:  }
+------------------
+_ZN5boost4asio6detail15keyword_tss_ptrINS1_10call_stackINS1_14thread_contextENS1_16thread_info_baseEE7contextEEC2Ev:
+        1:   36:  keyword_tss_ptr()
+        1:   37:  {
+        1:   38:  }
+------------------
+        -:   39:
+        -:   40:  // Destructor.
+        3:   41:  ~keyword_tss_ptr()
+        -:   42:  {
+        3:   43:  }
+------------------
+_ZN5boost4asio6detail15keyword_tss_ptrINS1_10call_stackINS1_23strand_executor_service11strand_implEhE7contextEED2Ev:
+        1:   41:  ~keyword_tss_ptr()
+        -:   42:  {
+        1:   43:  }
+------------------
+_ZN5boost4asio6detail15keyword_tss_ptrINS1_10call_stackINS1_14strand_service11strand_implEhE7contextEED2Ev:
+        1:   41:  ~keyword_tss_ptr()
+        -:   42:  {
+        1:   43:  }
+------------------
+_ZN5boost4asio6detail15keyword_tss_ptrINS1_10call_stackINS1_14thread_contextENS1_16thread_info_baseEE7contextEED2Ev:
+        1:   41:  ~keyword_tss_ptr()
+        -:   42:  {
+        1:   43:  }
+------------------
+        -:   44:
+        -:   45:  // Get the value.
+        -:   46:  operator T*() const
+        -:   47:  {
+        -:   48:    return value_;
+        -:   49:  }
+        -:   50:
+        -:   51:  // Set the value.
+        -:   52:  void operator=(T* value)
+        -:   53:  {
+        -:   54:    value_ = value;
+        -:   55:  }
+        -:   56:
+        -:   57:private:
+        -:   58:  static BOOST_ASIO_THREAD_KEYWORD T* value_;
+        -:   59:};
+        -:   60:
+        -:   61:template <typename T>
+        -:   62:BOOST_ASIO_THREAD_KEYWORD T* keyword_tss_ptr<T>::value_;
+        -:   63:
+        -:   64:} // namespace detail
+        -:   65:} // namespace asio
+        -:   66:} // namespace boost
+        -:   67:
+        -:   68:#include <boost/asio/detail/pop_options.hpp>
+        -:   69:
+        -:   70:#endif // defined(BOOST_ASIO_HAS_THREAD_KEYWORD_EXTENSION)
+        -:   71:
+        -:   72:#endif // BOOST_ASIO_DETAIL_KEYWORD_TSS_PTR_HPP

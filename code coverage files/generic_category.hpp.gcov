@@ -1,0 +1,105 @@
+        -:    0:Source:/usr/include/boost/system/detail/generic_category.hpp
+        -:    0:Graph:Server.gcno
+        -:    0:Data:Server.gcda
+        -:    0:Runs:1
+        -:    1:// Implementation details of generic_error_category
+        -:    2://
+        -:    3:// Copyright 2018 Peter Dimov
+        -:    4://
+        -:    5:// Distributed under the Boost Software License, Version 1.0. (See accompanying
+        -:    6:// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+        -:    7://
+        -:    8:// See library home page at http://www.boost.org/libs/system
+        -:    9:
+        -:   10:#include <cstring>
+        -:   11:
+        -:   12:namespace boost
+        -:   13:{
+        -:   14:
+        -:   15:namespace system
+        -:   16:{
+        -:   17:
+        -:   18:namespace detail
+        -:   19:{
+        -:   20:
+        -:   21:#if defined(__GLIBC__)
+        -:   22:
+        -:   23:// glibc has two incompatible strerror_r definitions
+        -:   24:
+    #####:   25:inline char const * strerror_r_helper( char const * r, char const * ) BOOST_NOEXCEPT
+        -:   26:{
+    #####:   27:    return r;
+        -:   28:}
+        -:   29:
+        -:   30:inline char const * strerror_r_helper( int r, char const * buffer ) BOOST_NOEXCEPT
+        -:   31:{
+        -:   32:    return r == 0? buffer: "Unknown error";
+        -:   33:}
+        -:   34:
+    #####:   35:inline char const * generic_error_category_message( int ev, char * buffer, std::size_t len ) BOOST_NOEXCEPT
+        -:   36:{
+    #####:   37:    return strerror_r_helper( strerror_r( ev, buffer, len ), buffer );
+        -:   38:}
+        -:   39:
+    #####:   40:inline std::string generic_error_category_message( int ev )
+        -:   41:{
+        -:   42:    char buffer[ 128 ];
+    #####:   43:    return generic_error_category_message( ev, buffer, sizeof( buffer ) );
+        -:   44:}
+        -:   45:
+        -:   46:#else
+        -:   47:
+        -:   48:// std::strerror is thread-safe on everything else, incl. Windows
+        -:   49:
+        -:   50:# if defined( BOOST_MSVC )
+        -:   51:#  pragma warning( push )
+        -:   52:#  pragma warning( disable: 4996 )
+        -:   53:# elif defined(__clang__) && defined(__has_warning)
+        -:   54:#  pragma clang diagnostic push
+        -:   55:#  if __has_warning("-Wdeprecated-declarations")
+        -:   56:#   pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        -:   57:#  endif
+        -:   58:# endif
+        -:   59:
+        -:   60:inline std::string generic_error_category_message( int ev )
+        -:   61:{
+        -:   62:    char const * m = std::strerror( ev );
+        -:   63:    return m? m: "Unknown error";
+        -:   64:}
+        -:   65:
+        -:   66:inline char const * generic_error_category_message( int ev, char * buffer, std::size_t len ) BOOST_NOEXCEPT
+        -:   67:{
+        -:   68:    if( len == 0 )
+        -:   69:    {
+        -:   70:        return buffer;
+        -:   71:    }
+        -:   72:
+        -:   73:    if( len == 1 )
+        -:   74:    {
+        -:   75:        buffer[0] = 0;
+        -:   76:        return buffer;
+        -:   77:    }
+        -:   78:
+        -:   79:    char const * m = std::strerror( ev );
+        -:   80:
+        -:   81:    if( m == 0 ) return "Unknown error";
+        -:   82:
+        -:   83:    std::strncpy( buffer, m, len - 1 );
+        -:   84:    buffer[ len-1 ] = 0;
+        -:   85:
+        -:   86:    return buffer;
+        -:   87:}
+        -:   88:
+        -:   89:# if defined( BOOST_MSVC )
+        -:   90:#  pragma warning( pop )
+        -:   91:# elif defined(__clang__) && defined(__has_warning)
+        -:   92:#  pragma clang diagnostic pop
+        -:   93:# endif
+        -:   94:
+        -:   95:#endif
+        -:   96:
+        -:   97:} // namespace detail
+        -:   98:
+        -:   99:} // namespace system
+        -:  100:
+        -:  101:} // namespace boost

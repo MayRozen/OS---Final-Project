@@ -1,0 +1,49 @@
+        -:    0:Source:/usr/include/boost/asio/detail/noncopyable.hpp
+        -:    0:Graph:Server.gcno
+        -:    0:Data:Server.gcda
+        -:    0:Runs:1
+        -:    1://
+        -:    2:// detail/noncopyable.hpp
+        -:    3:// ~~~~~~~~~~~~~~~~~~~~~~
+        -:    4://
+        -:    5:// Copyright (c) 2003-2020 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+        -:    6://
+        -:    7:// Distributed under the Boost Software License, Version 1.0. (See accompanying
+        -:    8:// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+        -:    9://
+        -:   10:
+        -:   11:#ifndef BOOST_ASIO_DETAIL_NONCOPYABLE_HPP
+        -:   12:#define BOOST_ASIO_DETAIL_NONCOPYABLE_HPP
+        -:   13:
+        -:   14:#if defined(_MSC_VER) && (_MSC_VER >= 1200)
+        -:   15:# pragma once
+        -:   16:#endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
+        -:   17:
+        -:   18:#include <boost/asio/detail/config.hpp>
+        -:   19:
+        -:   20:#include <boost/asio/detail/push_options.hpp>
+        -:   21:
+        -:   22:namespace boost {
+        -:   23:namespace asio {
+        -:   24:namespace detail {
+        -:   25:
+        -:   26:class noncopyable
+        -:   27:{
+        -:   28:protected:
+        6:   29:  noncopyable() {}
+        6:   30:  ~noncopyable() {}
+        -:   31:private:
+        -:   32:  noncopyable(const noncopyable&);
+        -:   33:  const noncopyable& operator=(const noncopyable&);
+        -:   34:};
+        -:   35:
+        -:   36:} // namespace detail
+        -:   37:
+        -:   38:using boost::asio::detail::noncopyable;
+        -:   39:
+        -:   40:} // namespace asio
+        -:   41:} // namespace boost
+        -:   42:
+        -:   43:#include <boost/asio/detail/pop_options.hpp>
+        -:   44:
+        -:   45:#endif // BOOST_ASIO_DETAIL_NONCOPYABLE_HPP

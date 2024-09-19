@@ -1,0 +1,136 @@
+        -:    0:Source:/usr/include/boost/system/detail/system_category_posix.hpp
+        -:    0:Graph:Server.gcno
+        -:    0:Data:Server.gcda
+        -:    0:Runs:1
+        -:    1:// POSIX-specific implementation details of system_error_category
+        -:    2://
+        -:    3:// Copyright 2018 Peter Dimov
+        -:    4://
+        -:    5:// Distributed under the Boost Software License, Version 1.0. (See accompanying
+        -:    6:// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+        -:    7://
+        -:    8:// See library home page at http://www.boost.org/libs/system
+        -:    9:
+        -:   10:namespace boost
+        -:   11:{
+        -:   12:
+        -:   13:namespace system
+        -:   14:{
+        -:   15:
+        -:   16:namespace detail
+        -:   17:{
+        -:   18:
+    #####:   19:inline bool is_generic_value( int ev ) BOOST_NOEXCEPT
+        -:   20:{
+        -:   21:    using namespace errc;
+        -:   22:
+        -:   23:    static int const gen[] =
+        -:   24:    {
+        -:   25:        success,
+        -:   26:        address_family_not_supported,
+        -:   27:        address_in_use,
+        -:   28:        address_not_available,
+        -:   29:        already_connected,
+        -:   30:        argument_list_too_long,
+        -:   31:        argument_out_of_domain,
+        -:   32:        bad_address,
+        -:   33:        bad_file_descriptor,
+        -:   34:        bad_message,
+        -:   35:        broken_pipe,
+        -:   36:        connection_aborted,
+        -:   37:        connection_already_in_progress,
+        -:   38:        connection_refused,
+        -:   39:        connection_reset,
+        -:   40:        cross_device_link,
+        -:   41:        destination_address_required,
+        -:   42:        device_or_resource_busy,
+        -:   43:        directory_not_empty,
+        -:   44:        executable_format_error,
+        -:   45:        file_exists,
+        -:   46:        file_too_large,
+        -:   47:        filename_too_long,
+        -:   48:        function_not_supported,
+        -:   49:        host_unreachable,
+        -:   50:        identifier_removed,
+        -:   51:        illegal_byte_sequence,
+        -:   52:        inappropriate_io_control_operation,
+        -:   53:        interrupted,
+        -:   54:        invalid_argument,
+        -:   55:        invalid_seek,
+        -:   56:        io_error,
+        -:   57:        is_a_directory,
+        -:   58:        message_size,
+        -:   59:        network_down,
+        -:   60:        network_reset,
+        -:   61:        network_unreachable,
+        -:   62:        no_buffer_space,
+        -:   63:        no_child_process,
+        -:   64:        no_link,
+        -:   65:        no_lock_available,
+        -:   66:        no_message_available,
+        -:   67:        no_message,
+        -:   68:        no_protocol_option,
+        -:   69:        no_space_on_device,
+        -:   70:        no_stream_resources,
+        -:   71:        no_such_device_or_address,
+        -:   72:        no_such_device,
+        -:   73:        no_such_file_or_directory,
+        -:   74:        no_such_process,
+        -:   75:        not_a_directory,
+        -:   76:        not_a_socket,
+        -:   77:        not_a_stream,
+        -:   78:        not_connected,
+        -:   79:        not_enough_memory,
+        -:   80:        not_supported,
+        -:   81:        operation_canceled,
+        -:   82:        operation_in_progress,
+        -:   83:        operation_not_permitted,
+        -:   84:        operation_not_supported,
+        -:   85:        operation_would_block,
+        -:   86:        owner_dead,
+        -:   87:        permission_denied,
+        -:   88:        protocol_error,
+        -:   89:        protocol_not_supported,
+        -:   90:        read_only_file_system,
+        -:   91:        resource_deadlock_would_occur,
+        -:   92:        resource_unavailable_try_again,
+        -:   93:        result_out_of_range,
+        -:   94:        state_not_recoverable,
+        -:   95:        stream_timeout,
+        -:   96:        text_file_busy,
+        -:   97:        timed_out,
+        -:   98:        too_many_files_open_in_system,
+        -:   99:        too_many_files_open,
+        -:  100:        too_many_links,
+        -:  101:        too_many_symbolic_link_levels,
+        -:  102:        value_too_large,
+        -:  103:        wrong_protocol_type
+        -:  104:    };
+        -:  105:
+    #####:  106:    int const n = sizeof( gen ) / sizeof( gen[0] );
+        -:  107:
+    #####:  108:    for( int i = 0; i < n; ++i )
+        -:  109:    {
+    #####:  110:        if( ev == gen[ i ] ) return true;
+        -:  111:    }
+        -:  112:
+    #####:  113:    return false;
+        -:  114:}
+        -:  115:
+    #####:  116:inline error_condition system_category_default_error_condition_posix( int ev ) BOOST_NOEXCEPT
+        -:  117:{
+    #####:  118:    if( is_generic_value( ev ) )
+        -:  119:    {
+    #####:  120:        return error_condition( ev, generic_category() );
+        -:  121:    }
+        -:  122:    else
+        -:  123:    {
+    #####:  124:        return error_condition( ev, system_category() );
+        -:  125:    }
+        -:  126:}
+        -:  127:
+        -:  128:} // namespace detail
+        -:  129:
+        -:  130:} // namespace system
+        -:  131:
+        -:  132:} // namespace boost

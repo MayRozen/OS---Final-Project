@@ -1,0 +1,315 @@
+        -:    0:Source:Server.cpp
+        -:    0:Graph:Server.gcno
+        -:    0:Data:Server.gcda
+        -:    0:Runs:1
+        -:    1:#include <iostream>
+        -:    2:#include <cstring>
+        -:    3:#include <sys/types.h>
+        -:    4:#include <sys/socket.h>
+        -:    5:#include <netinet/in.h>
+        -:    6:#include <netdb.h>
+        -:    7:#include <arpa/inet.h>
+        -:    8:#include <unistd.h>
+        -:    9:#include <csignal>
+        -:   10:#include <sys/wait.h>
+        -:   11:#include <queue>
+        -:   12:#include <thread>
+        -:   13:#include <mutex>
+        -:   14:#include <condition_variable>
+        -:   15:#include <functional>
+        -:   16:#include <vector>
+        -:   17:#include <boost/asio.hpp>
+        -:   18:#include "Graph.hpp"
+        -:   19:#include "Tree.hpp"
+        -:   20:#include "MSTFactory.hpp"
+        -:   21:
+        -:   22:#define PORT "9034"  // Port to listen on
+        -:   23:#define BACKLOG 10   // Number of pending connections queue will hold
+        -:   24:
+        -:   25:using namespace std;
+        -:   26:
+        -:   27:int sockfd; // Global socket descriptor for cleanup
+        -:   28:
+        -:   29:// Function to extract address information from sockaddr structure
+        1:   30:void *get_in_addr(struct sockaddr *sa) {
+        1:   31:    if (sa->sa_family == AF_INET) {
+        1:   32:        return &(((struct sockaddr_in*)sa)->sin_addr);
+        -:   33:    }
+    #####:   34:    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+        -:   35:}
+        -:   36:
+        -:   37:// Signal handler to properly close the socket on SIGINT or SIGTERM
+        1:   38:void signalHandler(int signum) {
+        1:   39:    if (sockfd != -1) {
+        1:   40:        close(sockfd);
+        -:   41:    }
+        1:   42:    std::cout << "\nServer shutting down gracefully...\n";
+        1:   43:    exit(signum);
+        -:   44:}
+        -:   45:
+        -:   46:// Function to handle client requests and execute the binary
+        1:   47:void handleRequest(int client_fd) {
+        1:   48:    std::cout << "Handling request..." << std::endl;
+        -:   49:
+        -:   50:    char buffer[1024];
+        1:   51:    std::string command;
+        1:   52:    Graph graph(5); // Default graph with 5 vertices
+        1:   53:    Tree mst;
+        -:   54:    
+        -:   55:    while (true) {
+       10:   56:        memset(buffer, 0, sizeof(buffer));
+       10:   57:        int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);  // Receive command from client
+       10:   58:        if (bytes_received <= 0) {
+    #####:   59:            break;  // Exit loop if the connection is closed or there's an error
+        -:   60:        }
+        -:   61:
+       10:   62:        command = std::string(buffer);
+       10:   63:        command = command.substr(0, command.find("\n")); // Remove trailing newline character
+       10:   64:        std::cout << "Received command: " << command << std::endl;
+        -:   65:
+       10:   66:        if (command == "end") {
+        1:   67:            break;
+        -:   68:        }
+        -:   69:        
+        9:   70:        std::istringstream iss(command);
+        9:   71:        std::string action;
+        9:   72:        iss >> action;
+        -:   73:
+        -:   74:        // Create a new graph
+        9:   75:        if (action == "new_graph") {
+        -:   76:            int num_vertices;
+        1:   77:            iss >> num_vertices;
+        1:   78:            graph = Graph(num_vertices); // Create a new graph with the specified number of vertices
+        2:   79:            std::string response = "New graph created with " + std::to_string(num_vertices) + " vertices.\n";
+        1:   80:            send(client_fd, response.c_str(), response.length(), 0);
+        1:   81:        }
+        -:   82:        // Add edge: format "add_edge vertex1 vertex2 weight"
+        8:   83:        else if (action == "add_edge") {
+        -:   84:            size_t v1, v2;
+        -:   85:            double weight;
+        3:   86:            iss >> v1 >> v2 >> weight;
+        3:   87:            graph.addEdge(v1, v2, weight);
+        6:   88:            std::string response = "Edge added between " + to_string(v1) + " and " + to_string(v2) + " with weight " + std::to_string(weight) + ".\n";
+        3:   89:            send(client_fd, response.c_str(), response.length(), 0);
+        3:   90:        }
+        -:   91:        // Remove edge: format "remove_edge vertex1 vertex2"
+        5:   92:        else if (action == "remove_edge") {
+        -:   93:            size_t v1, v2;
+        1:   94:            iss >> v1 >> v2;
+        1:   95:            graph.removeEdge(v1, v2);
+        2:   96:            std::string response = "Edge removed between " + std::to_string(v1) + " and " + std::to_string(v2) + ".\n";
+        1:   97:            send(client_fd, response.c_str(), response.length(), 0);
+        1:   98:        }
+        -:   99:        // Build MST using specified algorithm and return tree
+        4:  100:        else if (action == "MST") {
+        1:  101:            std::string algorithm;
+        1:  102:            iss >> algorithm;
+        -:  103:            
+        1:  104:            if (algorithm == "Kruskal") {
+        1:  105:                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::KRUSKAL);
+        1:  106:                mst = mstStrategy->computeMST(graph);
+        1:  107:            } 
+    #####:  108:            else if (algorithm == "Prim") {
+    #####:  109:                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::PRIM);
+    #####:  110:                mst = mstStrategy->computeMST(graph);
+    #####:  111:            } 
+    #####:  112:            else if (algorithm == "Boruvka") {
+    #####:  113:                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Boruvka);
+    #####:  114:                mst = mstStrategy->computeMST(graph);
+    #####:  115:            } 
+    #####:  116:            else if (algorithm == "Tarjan") {
+    #####:  117:                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Tarjan);
+    #####:  118:                mst = mstStrategy->computeMST(graph);
+    #####:  119:            }
+    #####:  120:            else if (algorithm == "Integer") {
+    #####:  121:                auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::Integer);
+    #####:  122:                mst = mstStrategy->computeMST(graph);
+    #####:  123:            }
+        -:  124:            else {
+    #####:  125:                const char *error_msg = "Unknown MST algorithm\n";
+    #####:  126:                send(client_fd, error_msg, strlen(error_msg), 0);
+    #####:  127:                continue;
+    #####:  128:            }
+        -:  129:
+        -:  130:            // Send back the MST result to the client
+        1:  131:            std::ostringstream oss;
+        1:  132:            oss << "MST Computed using " << algorithm << ":" << std::endl;
+        1:  133:            mst.printTree(oss);  // Assuming printTree can accept an ostream
+        1:  134:            std::string result = oss.str();
+        1:  135:            send(client_fd, result.c_str(), result.length(), 0);
+        -:  136:            
+        -:  137:
+        1:  138:        }
+        3:  139:        else if (action == "calculate_mst_data") {
+        1:  140:            if (!mst.isValid()) {
+    #####:  141:                const char *error_msg = "MST not computed yet. Please compute MST first.\n";
+    #####:  142:                send(client_fd, error_msg, strlen(error_msg), 0);
+    #####:  143:                continue;
+    #####:  144:            }
+        -:  145:
+        -:  146:            // Perform the data calculations
+        1:  147:            double totalWeight = mst.calculateTotalWeight();
+        1:  148:            double longestDistance = mst.calculateLongestDistance();
+        1:  149:            double averageDistance = mst.calculateAverageDistance();
+        1:  150:            double shortestDistance = mst.calculateShortestDistance();
+        -:  151:
+        -:  152:            // Prepare the response
+        1:  153:            std::ostringstream oss;
+        1:  154:            oss << "MST Data:\n";
+        1:  155:            oss << "Total Weight: " << totalWeight << "\n";
+        1:  156:            oss << "Longest Distance: " << longestDistance << "\n";
+        1:  157:            oss << "Average Distance: " << averageDistance << "\n";
+        1:  158:            oss << "Shortest Distance: " << shortestDistance << "\n";
+        1:  159:            std::string result = oss.str();
+        -:  160:
+        -:  161:            // Send the response to the client
+        1:  162:            send(client_fd, result.c_str(), result.length(), 0);
+        1:  163:        }
+        -:  164:
+        -:  165:        // Print the current graph
+        2:  166:        else if (action == "print_graph") {
+        2:  167:            std::ostringstream oss;
+        2:  168:            graph.printGraph(oss);  // Assuming printGraph can accept an ostream
+        2:  169:            std::string result = oss.str();
+        2:  170:            send(client_fd, result.c_str(), result.length(), 0);
+        2:  171:        }
+        -:  172:        else {
+    #####:  173:            const char *error_msg = "Unknown command\n";
+    #####:  174:            send(client_fd, error_msg, strlen(error_msg), 0);
+        -:  175:        }
+       18:  176:    }
+        -:  177:
+        1:  178:    close(client_fd);
+        1:  179:    std::cout << "Request handled." << std::endl;
+        1:  180:}
+        -:  181:
+        -:  182:
+        1:  183:int main() {
+        -:  184:    struct addrinfo hints, *servinfo, *p;
+        -:  185:    struct sockaddr_storage their_addr;
+        -:  186:    socklen_t sin_size;
+        1:  187:    int yes = 1;
+        -:  188:    char s[INET6_ADDRSTRLEN];
+        -:  189:    int rv;
+        -:  190:
+        -:  191:    // Register signal handlers to clean up on SIGINT and SIGTERM
+        1:  192:    signal(SIGINT, signalHandler);
+        1:  193:    signal(SIGTERM, signalHandler);
+        -:  194:
+        1:  195:    memset(&hints, 0, sizeof hints);
+        1:  196:    hints.ai_family = AF_INET;  // Use AF_INET for IPv4
+        1:  197:    hints.ai_socktype = SOCK_STREAM;
+        1:  198:    hints.ai_flags = AI_PASSIVE;
+        -:  199:
+        1:  200:    if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
+    #####:  201:        cerr << "getaddrinfo: " << gai_strerror(rv) << endl;
+    #####:  202:        return 1;
+        -:  203:    }
+        -:  204:
+       1*:  205:    for (p = servinfo; p != NULL; p = p->ai_next) {
+       1*:  206:        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+    #####:  207:            perror("server: socket");
+    #####:  208:            continue;
+        -:  209:        }
+        -:  210:
+        1:  211:        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+    #####:  212:            perror("setsockopt");
+    #####:  213:            close(sockfd);
+    #####:  214:            freeaddrinfo(servinfo);
+    #####:  215:            return 1;
+        -:  216:        }
+        -:  217:
+       1*:  218:        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+    #####:  219:            perror("server: bind");
+    #####:  220:            close(sockfd);
+    #####:  221:            continue;
+        -:  222:        }
+        -:  223:
+        1:  224:        break;
+        -:  225:    }
+        -:  226:
+        1:  227:    freeaddrinfo(servinfo);
+        -:  228:
+        1:  229:    if (p == NULL) {
+    #####:  230:        cerr << "server: failed to bind" << endl;
+    #####:  231:        return 2;
+        -:  232:    }
+        -:  233:
+        1:  234:    if (listen(sockfd, BACKLOG) == -1) {
+    #####:  235:        perror("listen");
+    #####:  236:        close(sockfd);
+    #####:  237:        return 1;
+        -:  238:    }
+        -:  239:
+        1:  240:    cout << "server: waiting for connections..." << endl;
+        -:  241:
+        1:  242:    LeaderFollower leaderFollower(4); // Create a thread pool with 4 threads
+        -:  243:
+        -:  244:    while (true) {
+        2:  245:        sin_size = sizeof their_addr;
+        2:  246:        int new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+       1*:  247:        if (new_fd == -1) {
+    #####:  248:            perror("accept");
+    #####:  249:            continue;
+        -:  250:        }
+        -:  251:
+        1:  252:        inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
+        1:  253:        cout << "server: got connection from " << s << endl;
+        -:  254:
+        1:  255:        leaderFollower.submitTask([new_fd]() {
+        1:  256:            handleRequest(new_fd);
+        1:  257:        });
+        1:  258:    }
+        -:  259:
+        -:  260:    close(sockfd);  // Ensure socket is closed before exit
+        -:  261:    return 0;
+    =====:  262:}
+        -:  263:
+        -:  264://**************************** how to run the code **********************************//
+        -:  265:
+        -:  266:
+        -:  267:// nc 127.0.0.1 9034
+        -:  268:// new_graph 5
+        -:  269:// "New graph created with 5 vertices."
+        -:  270:
+        -:  271:// add_edge 0 1 2.0
+        -:  272:// "Edge added between 0 and 1 with weight 2.0."
+        -:  273:
+        -:  274:// add_edge 0 2 3.0
+        -:  275:// "Edge added between 0 and 2 with weight 3.0."
+        -:  276:
+        -:  277:// print_graph
+        -:  278:// "Current graph:
+        -:  279:// 0 -> (1, 2) (2, 3) 
+        -:  280:// 1 -> (0, 2) 
+        -:  281:// 2 -> (0, 3) 
+        -:  282:// 3 -> 
+        -:  283:// 4 -> "
+        -:  284:
+        -:  285:// MST Kruskal
+        -:  286:// "MST Computed using Kruskal:
+        -:  287:// 0 -> (1, 2) (2, 3) 
+        -:  288:// 1 -> (0, 2) 
+        -:  289:// 2 -> (0, 3) 
+        -:  290:// 3 -> 
+        -:  291:// 4 -> "
+        -:  292:// Edge 0-1 with weight 2.0
+        -:  293:// Edge 0-2 with weight 3.0
+        -:  294:
+        -:  295:// calculate_mst_data
+        -:  296:
+        -:  297:// remove_edge 1 2
+        -:  298:// "Edge removed between 1 and 2."
+        -:  299:
+        -:  300:// add_edge 2 3 6.0
+        -:  301:// "Edge added between 2 and 3 with weight 6.000000."
+        -:  302:
+        -:  303:// print_graph
+        -:  304:// "0 -> (1, 2) (2, 3) 
+        -:  305:// 1 -> (0, 2) 
+        -:  306:// 2 -> (0, 3) (3, 6) 
+        -:  307:// 3 -> (2, 6) 
+        -:  308:// 4 -> "
+        -:  309:
+        -:  310:// end
+        -:  311:
