@@ -83,6 +83,7 @@ void handleRequest(int client_fd) {
     char buffer[1024];
     std::string command;
     Graph graph(5); // Default graph with 5 vertices
+    Tree mst;
     
     while (true) {
         memset(buffer, 0, sizeof(buffer));
@@ -133,7 +134,6 @@ void handleRequest(int client_fd) {
             std::string algorithm;
             iss >> algorithm;
             
-            Tree mst;
             if (algorithm == "Kruskal") {
                 auto mstStrategy = MSTFactory::createMSTStrategy(MSTFactory::Algorithm::KRUSKAL);
                 mst = mstStrategy->computeMST(graph);
@@ -166,7 +166,35 @@ void handleRequest(int client_fd) {
             mst.printTree(oss);  // Assuming printTree can accept an ostream
             std::string result = oss.str();
             send(client_fd, result.c_str(), result.length(), 0);
+            
+
         }
+        else if (action == "calculate_mst_data") {
+            if (!mst.isValid()) {
+                const char *error_msg = "MST not computed yet. Please compute MST first.\n";
+                send(client_fd, error_msg, strlen(error_msg), 0);
+                continue;
+            }
+
+            // Perform the data calculations
+            double totalWeight = mst.calculateTotalWeight();
+            double longestDistance = mst.calculateLongestDistance();
+            double averageDistance = mst.calculateAverageDistance();
+            double shortestDistance = mst.calculateShortestDistance();
+
+            // Prepare the response
+            std::ostringstream oss;
+            oss << "MST Data:\n";
+            oss << "Total Weight: " << totalWeight << "\n";
+            oss << "Longest Distance: " << longestDistance << "\n";
+            oss << "Average Distance: " << averageDistance << "\n";
+            oss << "Shortest Distance: " << shortestDistance << "\n";
+            std::string result = oss.str();
+
+            // Send the response to the client
+            send(client_fd, result.c_str(), result.length(), 0);
+        }
+
         // Print the current graph
         else if (action == "print_graph") {
             std::ostringstream oss;
@@ -269,39 +297,48 @@ int main() {
 //**************************** how to run the code **********************************//
 
 
-// $ nc 127.0.0.1 9034
+// nc 127.0.0.1 9034
 // new_graph 5
-// New graph created with 5 vertices.
+// "New graph created with 5 vertices."
 
 // add_edge 0 1 2.0
-// Edge added between 0 and 1 with weight 2.0.
+// "Edge added between 0 and 1 with weight 2.0."
 
 // add_edge 0 2 3.0
-// Edge added between 0 and 2 with weight 3.0.
+// "Edge added between 0 and 2 with weight 3.0."
 
 // print_graph
-// Current graph:
-// 0 -> 1 (2.0), 2 (3.0)
-// 1 -> 0 (2.0)
-// 2 -> 0 (3.0)
+// "Current graph:
+// 0 -> (1, 2) (2, 3) 
+// 1 -> (0, 2) 
+// 2 -> (0, 3) 
+// 3 -> 
+// 4 -> "
 
 // MST Kruskal
-// MST Computed using Kruskal:
+// "MST Computed using Kruskal:
+// 0 -> (1, 2) (2, 3) 
+// 1 -> (0, 2) 
+// 2 -> (0, 3) 
+// 3 -> 
+// 4 -> "
 // Edge 0-1 with weight 2.0
 // Edge 0-2 with weight 3.0
 
+// calculate_mst_data
+
 // remove_edge 1 2
-// Edge removed between 1 and 2.
+// "Edge removed between 1 and 2."
 
 // add_edge 2 3 6.0
-// Edge added between 2 and 3 with weight 6.000000.
+// "Edge added between 2 and 3 with weight 6.000000."
 
 // print_graph
-// 0 -> (1, 2) (2, 3) 
+// "0 -> (1, 2) (2, 3) 
 // 1 -> (0, 2) 
 // 2 -> (0, 3) (3, 6) 
 // 3 -> (2, 6) 
-// 4 -> 
+// 4 -> "
 
 // end
 

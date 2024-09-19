@@ -10,6 +10,7 @@ class Tree {
 public:
     Tree(int myVertices);
     Tree();
+    bool isValid() const;
     void addEdge(size_t u, size_t v);
     void printTree() const;
     void printTree(std::ostream& os) const;

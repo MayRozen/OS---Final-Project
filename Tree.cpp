@@ -9,6 +9,11 @@ Tree::Tree()  {
     treeAdjList.resize(static_cast<size_t>(0));
 }
 
+bool Tree::isValid() const {
+        // Assuming the tree has some internal representation of edges/nodes
+        return !treeAdjList.empty(); // or check nodes, depending on how your tree is structured
+    }
+
 void Tree::addEdge(size_t u, size_t v) {
     treeAdjList[u].emplace_back(v, 0.0); // Default weight 0.0
     treeAdjList[v].emplace_back(u, 0.0); // Assuming an undirected tree
