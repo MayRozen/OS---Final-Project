@@ -43,39 +43,6 @@ void signalHandler(int signum) {
     exit(signum);
 }
 
-// Leader-Follower pattern class to manage thread pool
-class LeaderFollower {
-    std::vector<std::thread> threads;
-    std::mutex mtx;
-    boost::asio::io_context io_context;
-    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard;
-
-public:
-    LeaderFollower(int n_threads)
-        : work_guard(boost::asio::make_work_guard(io_context)) {
-        for (int i = 0; i < n_threads; ++i) {
-            threads.emplace_back([this, i]() { this->threadLoop(i); });
-        }
-    }
-
-    ~LeaderFollower() {
-        io_context.stop();
-        for (auto& thread : threads) {
-            thread.join();
-        }
-    }
-
-    void submit(std::function<void()> task) {
-        boost::asio::post(io_context, task);
-    }
-
-private:
-    void threadLoop(int id) {
-        std::cout << "Thread " << id << " is running" << std::endl;
-        io_context.run();
-    }
-};
-
 // Function to handle client requests and execute the binary
 void handleRequest(int client_fd) {
     std::cout << "Handling request..." << std::endl;
@@ -285,7 +252,7 @@ int main() {
         inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
         cout << "server: got connection from " << s << endl;
 
-        leaderFollower.submit([new_fd]() {
+        leaderFollower.submitTask([new_fd]() {
             handleRequest(new_fd);
         });
     }
