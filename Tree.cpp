@@ -1,13 +1,20 @@
 #include "Tree.hpp"
 #include <utility>  // for std::move
 
-// LeaderFollower class implementation
+/* Creates threadCount worker threads and assigns each one the responsibility to 
+execute the workerThread function.
+*/
 LeaderFollower::LeaderFollower(size_t threadCount) {
     for (size_t i = 0; i < threadCount; ++i) {
+        // workerThread = It defines the behavior of each individual thread in the thread pool.
         workers.emplace_back(&LeaderFollower::workerThread, this);
     }
 }
 
+/*Signals the workers to stop by setting stop = true and notifying all threads.
+Ensures that all threads finish by calling join() on them (so the main thread waits for all 
+workers to finish their tasks and terminate before destruction).
+*/
 LeaderFollower::~LeaderFollower() {
     {
         std::unique_lock<std::mutex> lock(tasksMutex);
@@ -21,6 +28,9 @@ LeaderFollower::~LeaderFollower() {
     }
 }
 
+/* responsible for adding a new task to the task queue and notifying the worker 
+threads that a task is available for execution.
+*/
 std::future<void> LeaderFollower::submitTask(Task task) {
     // Wrap the task in a std::packaged_task
     auto packagedTask = std::make_shared<std::packaged_task<void()>>(std::move(task));
@@ -44,10 +54,13 @@ std::future<void> LeaderFollower::submitTask(Task task) {
 
 
 void LeaderFollower::workerThread() {
-    while (true) {
+    while (true) { // waiting for a task to be added to the task queue.
         Task task;
         {
             std::unique_lock<std::mutex> lock(tasksMutex);
+
+            /* Pause the thread until a task is available in the queue or until 
+            the stop signal is sent. */
             tasksCondition.wait(lock, [this] { return stop || !tasks.empty(); });
             if (stop && tasks.empty()) {
                 return;

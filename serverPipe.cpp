@@ -52,7 +52,14 @@ std::condition_variable response_cv;
 bool running = true; // Flag to indicate server status
 
 // Stage 1: Receive Request
+/* accepts incoming client connections and pushes the client file descriptors into the requestQueue.
+ This stage is responsible for receiving requests from clients.
+*/
 void receiveRequests() {
+    /*accepts new client connections and pushes the client file descriptor (new_fd) into the 
+    requestQueue. This represents a new connection from a client, and this descriptor is 
+    what will be processed later.
+    */
     struct sockaddr_storage their_addr;
     socklen_t sin_size;
     char s[INET6_ADDRSTRLEN];
@@ -77,7 +84,13 @@ void receiveRequests() {
 }
 
 // Stage 2: Process Commands
+/* waits for requests to be available in requestQueue, pops a request, and processes it. 
+It reads commands from the client, performs various actions (MST computation), and sends the response back to the client.
+*/
 void processCommands() {
+    /*When a client file descriptor is available, it pops the client_fd from 
+    the queue and uses it to communicate with the client 
+    */
     while (running) {
         int client_fd;
 
