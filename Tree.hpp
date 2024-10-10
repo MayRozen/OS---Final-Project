@@ -38,7 +38,7 @@ class Tree {
 public:
     Tree(int myVertices);
     // Constructor to initialize the Tree with n vertices
-    Tree(int n) : treeAdjList(n) {}
+    Tree(size_t n) : treeAdjList(n) {}
     Tree();
 
     void addEdge(size_t u, size_t v, double weight);

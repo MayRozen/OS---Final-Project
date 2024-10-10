@@ -19,6 +19,7 @@
 #include "Graph.hpp"
 #include "Tree.hpp"
 #include "MSTFactory.hpp"
+#include "calculate.hpp"
 
 #define PORT "9034"  // Port to listen on
 #define BACKLOG 10   // Number of pending connections queue will hold
@@ -55,7 +56,7 @@ bool running = true; // Flag to indicate server status
 
 class ActiveObject {
 public:
-    using Task = std::function<void(Graph Tree, int client_fd)>;
+    using Task = std::function<void(Tree tree, int client_fd)>;
 
     ActiveObject(Task task) : task_(task), stop_(false) {
         thread_ = std::thread(&ActiveObject::run, this);
@@ -79,7 +80,7 @@ public:
 private:
     void run() {
         while (true) {
-            std::pair<Graph, int> data;
+            std::pair<Tree, int> data;
             {
                 std::unique_lock<std::mutex> lock(mutex_);
                 cv_.wait(lock, [this]() { return stop_ || !queue_.empty(); });
@@ -93,7 +94,7 @@ private:
 
     Task task_;
     std::thread thread_;
-    std::queue<std::pair<Graph, int>> queue_;  // The function arguments
+    std::queue<std::pair<Tree, int>> queue_;  // The function arguments
     std::mutex mutex_;
     std::condition_variable cv_;
     bool stop_;
@@ -117,7 +118,7 @@ private:
 };
 
 // Each client runs this method independantly (threads)
-void* handle_client(int client_fd) {
+void handle_client(int client_fd) {
     std::cout << "Handling request..." << std::endl;
 
     char buffer[1024];
@@ -125,9 +126,11 @@ void* handle_client(int client_fd) {
     Graph graph(5); // Default graph with 5 vertices
     Tree mst;
     while (true) {
+        
         memset(buffer, 0, sizeof(buffer));
         int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);  // Receive command from client
         if (bytes_received <= 0) {
+            cout << "test" << endl;
             break;  // Exit loop if the connection is closed or there's an error
         }
         command = std::string(buffer);
@@ -195,24 +198,22 @@ void* handle_client(int client_fd) {
                 send(client_fd, error_msg, strlen(error_msg), 0);
                 continue;
             }
-
         
             cout << "The MST : \n";
             mst.printTree();  
             
             Pipeline pipeline;
             // Add stages
-            pipeline.addStage(Total_weight);
-            pipeline.addStage(Longest_distance);
-            pipeline.addStage(Average_distance);
-            pipeline.addStage(Shortest_distance);
+            pipeline.addStage(calculateTotalWeight);
+            pipeline.addStage(calculateLongestDistance);
+            pipeline.addStage(calculateAverageDistance);
+            //pipeline.addStage(Shortest_distance);// need to implement
             // Execute command
-            pipeline.execute(tree, client_fd);
+            pipeline.execute(mst, client_fd);
                 
-            delete mst_algo;
+            //delete mst_algo;
 
         }
-            
     }
 }
 
@@ -447,15 +448,21 @@ int main() {
 
     cout << "server: waiting for connections..." << endl;
 
-    // Start active object threads
-    RequestReceiver receiver;
-    CommandProcessor processor;
+    struct sockaddr_storage their_addr;
+    socklen_t sin_size;
+    char s[INET6_ADDRSTRLEN];
 
-    std::thread receiverThread(receiver);
-    std::thread processorThread(processor);
+    sin_size = sizeof their_addr;
+    int new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+    if (new_fd == -1) {
+        perror("accept");
+    }
 
-    receiverThread.join();
-    processorThread.join();
+    inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
+    cout << "server: got connection from " << s << endl;
+
+    handle_client(sockfd);
+
 
     close(sockfd);  // Ensure socket is closed before exit
     return 0;

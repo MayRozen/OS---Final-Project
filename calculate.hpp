@@ -13,4 +13,4 @@ void calculateLongestDistance(const Tree& tree, int clientSocket);
 void calculateAverageDistance(const Tree& tree, int clientSocket);
 
 // Shortest distance between two vertices Xi,Xj where i≠j and edge belongs to MST
-void Shortest_distance(Graph Tree, int client_fd);
+void Shortest_distance(Tree Tree, int client_fd);

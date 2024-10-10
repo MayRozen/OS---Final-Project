@@ -15,9 +15,9 @@ VALFLAGS = --leak-check=full --log-file="valgrind_log.txt"
 LDFLAGS = -lboost_system
 
 # Source files
-SRC_MAIN = main.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
-SRC_SERVER = Server.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
-SRC_SERVER_PIPE = serverPipe.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
+SRC_MAIN = main.cpp Graph.cpp calculate.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
+SRC_SERVER = Server.cpp Graph.cpp calculate.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
+SRC_SERVER_PIPE = serverPipe.cpp calculate.cpp Graph.cpp Tree.cpp MSTFactory.cpp KruskalMST.cpp PrimMST.cpp BoruvkaMST.cpp TarjanMST.cpp IntegerMST.cpp
 
 # Object files
 OBJ_MAIN = $(SRC_MAIN:.cpp=.o)

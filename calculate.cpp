@@ -47,6 +47,6 @@ void calculateAverageDistance(const Tree& tree, int clientSocket) {
         }
     }
 
-    double averageDistance = pairCount > 0 ? (totalDistance / pairCount) : 0.0;
+    //double averageDistance = pairCount > 0 ? (totalDistance / pairCount) : 0.0;
 
 }
