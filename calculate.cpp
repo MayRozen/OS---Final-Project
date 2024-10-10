@@ -16,6 +16,9 @@ void calculateTotalWeight(const Tree& tree, int clientSocket) {
     }
     totalWeight /= 2.0;  // Each edge is counted twice (u->v and v->u)
 
+    string msg = "The Total weight of the MST is: " + to_string(totalWeight) + "\n";
+    write(clientSocket, msg.c_str(), msg.size());
+
 }
 
 // 2. Calculate the longest distance between two vertices and send it to the client through the socket
@@ -29,6 +32,8 @@ void calculateLongestDistance(const Tree& tree, int clientSocket) {
             }
         }
     }
+    string msg = "Longest distance between two vertices is: " + to_string(maxDistance) + "\n";
+    write(clientSocket, msg.c_str(), msg.size());
 
 }
 
@@ -47,6 +52,24 @@ void calculateAverageDistance(const Tree& tree, int clientSocket) {
         }
     }
 
-    //double averageDistance = pairCount > 0 ? (totalDistance / pairCount) : 0.0;
+    // Calculate the average distance
+    double average = pairCount > 0 ? totalDistance / pairCount : 0.0;
+    string msg = "The average distance between vertecies in the graph is: " + to_string(average) + "\n";
+    write(clientSocket, msg.c_str(), msg.size());
+}
 
+void calculateShortestDistance(const Tree& tree, int clientSocket) {
+    // Initialize minDistance to the largest possible value
+    double minDistance = std::numeric_limits<double>::max();
+
+    for (const auto& neighbors : tree.treeAdjList) {
+        for (const auto& neighbor : neighbors) {
+            if (neighbor.second < minDistance && neighbor.second > 0) {  
+                // Track the minimum edge weight
+                minDistance = neighbor.second;
+            }
+        }
+    }
+     string msg = "Shortest distance between two vertices is: " + to_string(minDistance) + "\n";
+    write(clientSocket, msg.c_str(), msg.size());
 }
