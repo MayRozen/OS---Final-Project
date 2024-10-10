@@ -37,6 +37,8 @@ private:
 class Tree {
 public:
     Tree(int myVertices);
+    // Constructor to initialize the Tree with n vertices
+    Tree(int n) : treeAdjList(n) {}
     Tree();
 
     void addEdge(size_t u, size_t v, double weight);
@@ -53,8 +55,6 @@ public:
 
     double getEdgeWeight(size_t u, size_t v) const;
     int getEdgesCount() const;
-
-private:
     std::vector<std::vector<std::pair<size_t, double>>> treeAdjList;
     int vertices;  
 };
